@@ -178,6 +178,7 @@ public class RedissonLock extends RedissonBaseLock {
         }
         CompletionStage<Long> f = ttlRemainingFuture.thenApply(ttlRemaining -> {
             // lock acquired
+            // 加锁成功才会开启看门狗
             if (ttlRemaining == null) {
                 if (leaseTime > 0) {
                     internalLockLeaseTime = unit.toMillis(leaseTime);
@@ -224,6 +225,7 @@ public class RedissonLock extends RedissonBaseLock {
         
         time -= System.currentTimeMillis() - current;
         if (time <= 0) {
+            // 获取锁超时
             acquireFailed(waitTime, unit, threadId);
             return false;
         }

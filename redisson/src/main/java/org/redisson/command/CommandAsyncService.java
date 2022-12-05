@@ -277,6 +277,11 @@ public class CommandAsyncService implements CommandAsyncExecutor {
     }
 
     private NodeSource getNodeSource(String key) {
+        /**
+         * 计算哈希槽
+         *     1）Cluster场景：⾸先会通过key计算出CRC16值，然后 CRC16值对16384进⾏取模，进⽽得到hash slot
+         *     2）单机：直接获取到startSlot
+         */
         int slot = connectionManager.calcSlot(key);
         return new NodeSource(slot);
     }
@@ -337,6 +342,7 @@ public class CommandAsyncService implements CommandAsyncExecutor {
 
     @Override
     public <T, R> RFuture<R> evalWriteAsync(String key, Codec codec, RedisCommand<T> evalCommandType, String script, List<Object> keys, Object... params) {
+        // 获取要加锁的节点
         NodeSource source = getNodeSource(key);
         return evalAsync(source, false, codec, evalCommandType, script, keys, false, params);
     }

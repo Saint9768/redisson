@@ -166,6 +166,7 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
         } else {
             entry.addThreadId(threadId);
             try {
+                // 看门狗，30 / 3 = 10给锁虚名一下
                 renewExpiration();
             } finally {
                 if (Thread.currentThread().isInterrupted()) {
@@ -176,6 +177,7 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
     }
 
     protected CompletionStage<Boolean> renewExpirationAsync(long threadId) {
+        // 表示判断当前key中，是否还被线程UUID:ThreadId持有锁，持有则设置过期时间为30s（续命）。
         return evalWriteAsync(getRawName(), LongCodec.INSTANCE, RedisCommands.EVAL_BOOLEAN,
                 "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
                         "redis.call('pexpire', KEYS[1], ARGV[1]); " +
