@@ -124,7 +124,8 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
         if (ee == null) {
             return;
         }
-        
+
+        // 创建一个定时任务，每30s执行一次
         Timeout task = commandExecutor.getConnectionManager().newTimeout(new TimerTask() {
             @Override
             public void run(Timeout timeout) throws Exception {
@@ -136,7 +137,8 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
                 if (threadId == null) {
                     return;
                 }
-                
+
+                // 重新设置锁过期时间
                 CompletionStage<Boolean> future = renewExpirationAsync(threadId);
                 future.whenComplete((res, e) -> {
                     if (e != null) {
@@ -166,10 +168,11 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
         } else {
             entry.addThreadId(threadId);
             try {
-                // 看门狗，30 / 3 = 10给锁虚名一下
+                // 看门狗，每30 / 3 = 10s 给锁续命
                 renewExpiration();
             } finally {
                 if (Thread.currentThread().isInterrupted()) {
+                    // 如果持有锁的线程被中断，则杀死看门狗
                     cancelExpirationRenewal(threadId);
                 }
             }
